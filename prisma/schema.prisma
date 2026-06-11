@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// The canonical catalog entry: one row per bottle *expression*
+// (e.g. "George T. Stagg"), not per vintage and not per physical bottle.
+// id is immutable forever — consuming apps store it as a foreign key.
+model Bottle {
+  id         Int      @id @default(autoincrement())
+  name       String
+  brand      String
+  distillery String?
+  category   String? // Bourbon, Rye, Scotch, ...
+  tier       String? // S / A / B / C
+  myTier     String? // personal tier override
+  vabcCode   String? // VA ABC product code
+  msrp       Decimal? @db.Decimal(10, 2)
+  warn       String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
+  notes      String?
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  aliases  Alias[]
+  releases Release[]
+  listings StoreListing[]
+  pending  PendingBottle[]
+
+  @@index([brand])
+  @@index([tier])
+}
+
+// Shortcodes are the integration contract: messy human input is matched
+// against these. Codes are stored lowercased and must be globally unique.
+model Alias {
+  id       Int    @id @default(autoincrement())
+  bottleId Int
+  bottle   Bottle @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  code     String @unique
+
+  @@index([bottleId])
+}
+
+// Optional vintage/batch child records, only when a release matters
+// (e.g. GTS 2024 vs 2025). Apps may reference a Bottle or a Release.
+model Release {
+  id        Int      @id @default(autoincrement())
+  bottleId  Int
+  bottle    Bottle   @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  year      String?
+  batch     String?
+  label     String? // display override, e.g. "GTS Fall 2025"
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([bottleId])
+}
+
+// Mapping from a store listing (Beacon's identity: site + product handle)
+// to a canonical bottle. This is how Beacon dedupes across stores.
+model StoreListing {
+  id        Int      @id @default(autoincrement())
+  store     String // Beacon site id, e.g. "thereveries"
+  handle    String // Shopify product handle (URL slug)
+  bottleId  Int
+  bottle    Bottle   @relation(fields: [bottleId], references: [id], onDelete: Cascade)
+  title     String? // raw store title at time of mapping, for reference
+  url       String?
+  createdAt DateTime @default(now())
+
+  @@unique([store, handle])
+  @@index([bottleId])
+}
+
+enum PendingStatus {
+  PENDING
+  MATCHED
+  IGNORED
+}
+
+// Inbound queue: the only write path consuming apps have. Beacon posts
+// listings it can't map; you resolve them here (match / create / ignore).
+model PendingBottle {
+  id               Int           @id @default(autoincrement())
+  store            String
+  handle           String
+  title            String
+  vendor           String?
+  url              String?
+  image            String?
+  price            Decimal?      @db.Decimal(10, 2)
+  status           PendingStatus @default(PENDING)
+  resolvedBottleId Int?
+  resolvedBottle   Bottle?       @relation(fields: [resolvedBottleId], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([store, handle])
+  @@index([status])
+}
