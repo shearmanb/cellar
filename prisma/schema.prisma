@@ -103,3 +103,14 @@ model PendingBottle {
   @@unique([store, handle])
   @@index([status])
 }
+
+// Records "not a dupe" decisions from the /dupes review tab so dismissed
+// pairs stop appearing. Pairs are stored with aId < bId.
+model DupeReview {
+  id        Int      @id @default(autoincrement())
+  aId       Int
+  bId       Int
+  createdAt DateTime @default(now())
+
+  @@unique([aId, bId])
+}

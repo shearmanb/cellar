@@ -36,6 +36,19 @@ export async function createBottleFromPending(pendingId: number, form: FormData)
   revalidatePath("/bottles");
 }
 
+// Manual "check stores now" from the pending page.
+export async function runStoreSync() {
+  const { syncAllStores } = await import("@/lib/sync");
+  const results = await syncAllStores();
+  revalidatePath("/pending");
+  const queued = results.reduce((n, r) => n + r.queued, 0);
+  const errors = results.filter((r) => r.error).map((r) => `${r.store}: ${r.error}`);
+  const { redirect } = await import("next/navigation");
+  redirect(
+    `/pending?synced=${queued}${errors.length ? `&syncerror=${encodeURIComponent(errors.join("; "))}` : ""}`
+  );
+}
+
 export async function ignorePending(pendingId: number) {
   await prisma.pendingBottle.update({
     where: { id: pendingId },

@@ -39,12 +39,19 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
 | `/api/pending` | GET | Current pending queue |
 | `/api/pending` | POST | Submit an unmapped listing: `{store, handle, title, vendor?, url?, image?, price?}`. Idempotent on `(store, handle)`; returns `{status: "already-mapped", bottleId}` if a mapping exists. **Auth required.** |
 | `/api/export` | GET | CSV export (round-trippable with `/import`) |
+| `/api/sync` | POST | Pull all `SYNC_STORES` Shopify stores and queue unknown products as pending. **Auth required.** For external cron. |
 
 ## Web UI
 
 - `/bottles` — searchable catalog (name/brand/shortcode), tier filter, tier chips
 - `/bottles/new`, `/bottles/[id]/edit` — entry forms (main editing flow), releases, archive
-- `/pending` — review queue: match to existing bottle / create new / ignore
+- `/pending` — review queue: match to existing bottle / create new / ignore. Includes a
+  "Check stores now" button when `SYNC_STORES` is set (e.g.
+  `SYNC_STORES=thereveries=https://store-url`) — Cellar polls each store's public
+  Shopify `/products.json` and queues anything unmapped.
+- `/dupes` — suspected duplicates (same brand + near-identical name, ignoring pairs
+  that differ by age/proof/batch numbers). "Keep this one" merges the other bottle's
+  shortcodes/mappings/releases into it and archives it; "Not a dupe" hides the pair.
 - `/import` — CSV bulk import (paste or upload). Rows with `id` update in place; rows
   without create. For mass grid edits, export CSV → edit in Excel → re-import, or run
   `npm run db:studio` locally against the production `DATABASE_URL`.

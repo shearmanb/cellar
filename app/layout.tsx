@@ -22,6 +22,7 @@ export default function RootLayout({
           <nav>
             <Link href="/bottles">Bottles</Link>
             <Link href="/pending">Pending</Link>
+            <Link href="/dupes">Dupes</Link>
             <Link href="/import">Import</Link>
             <a href="/api/export">Export CSV</a>
           </nav>

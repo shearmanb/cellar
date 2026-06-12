@@ -1,9 +1,20 @@
 import { prisma } from "@/lib/prisma";
-import { matchPending, createBottleFromPending, ignorePending } from "@/lib/actions/pending";
+import {
+  matchPending,
+  createBottleFromPending,
+  ignorePending,
+  runStoreSync,
+} from "@/lib/actions/pending";
+import { configuredStores } from "@/lib/sync";
 
 export const dynamic = "force-dynamic";
 
-export default async function PendingPage() {
+export default async function PendingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ synced?: string; syncerror?: string }>;
+}) {
+  const { synced, syncerror } = await searchParams;
   const [pending, bottles] = await Promise.all([
     prisma.pendingBottle.findMany({
       where: { status: "PENDING" },
@@ -23,6 +34,24 @@ export default async function PendingPage() {
         Listings submitted by consuming apps (e.g. Beacon) that aren&apos;t mapped to a
         canonical bottle yet. Match them to an existing bottle, mint a new one, or ignore.
       </p>
+
+      {configuredStores().length > 0 ? (
+        <form action={runStoreSync} className="toolbar">
+          <button type="submit">
+            Check stores now ({configuredStores().map((s) => s.store).join(", ")})
+          </button>
+        </form>
+      ) : (
+        <p className="muted">
+          Tip: set the <code>SYNC_STORES</code> env var (e.g.{" "}
+          <code>thereveries=https://store-url</code>) to let Cellar poll Shopify stores
+          for new products directly.
+        </p>
+      )}
+      {synced !== undefined ? (
+        <p className="success">Sync complete — {synced} new listing(s) queued.</p>
+      ) : null}
+      {syncerror ? <p className="error">Sync errors: {syncerror}</p> : null}
 
       {pending.length === 0 ? <p className="success">Queue is empty 🎉</p> : null}
 
