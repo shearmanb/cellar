@@ -63,6 +63,7 @@ export async function importCsv(text: string): Promise<ImportResult> {
         tier: col(row, "tier"),
         myTier: col(row, "my_tier"),
         vabcCode: col(row, "vabc_code"),
+        ndp: ["1", "true", "yes", "y", "ndp"].includes((col(row, "ndp") ?? "").toLowerCase()),
         msrp,
         warn: col(row, "warn"),
         notes: col(row, "notes"),

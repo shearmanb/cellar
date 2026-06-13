@@ -37,6 +37,7 @@ function bottleData(form: FormData) {
     tier: clean(form.get("tier")),
     myTier: clean(form.get("myTier")),
     vabcCode: clean(form.get("vabcCode")),
+    ndp: form.get("ndp") === "on",
     msrp,
     warn: clean(form.get("warn")),
     notes: clean(form.get("notes")),

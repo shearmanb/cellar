@@ -63,6 +63,7 @@ export const CSV_HEADER = [
   "tier",
   "my_tier",
   "vabc_code",
+  "ndp",
   "msrp",
   "warn",
   "notes",

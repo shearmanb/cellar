@@ -19,6 +19,7 @@ model Bottle {
   tier       String? // S / A / B / C
   myTier     String? // personal tier override
   vabcCode   String? // VA ABC product code
+  ndp        Boolean  @default(false) // non-distiller producer (sourced, not self-distilled)
   msrp       Decimal? @db.Decimal(10, 2)
   warn       String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
   notes      String?

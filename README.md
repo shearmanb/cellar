@@ -42,15 +42,18 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
 
 ## Web UI
 
-- `/bottles` — searchable catalog (name/brand/shortcode), tier filter, tier chips
+- `/bottles` — searchable catalog (name/brand/shortcode) with a filter for every
+  displayed column; columns shown are configurable in the Control Panel
+- `/control-panel` — toggle which bottle fields (distillery, category, NDP, MSRP, …)
+  appear as columns/filters on the bottle list (saved to a cookie)
 - `/bottles/new`, `/bottles/[id]/edit` — entry forms (main editing flow), releases, archive
 - `/pending` — review queue: match to existing bottle / create new / ignore
 - `/import` — CSV bulk import (paste or upload). Rows with `id` update in place; rows
   without create. For mass grid edits, export CSV → edit in Excel → re-import, or run
   `npm run db:studio` locally against the production `DATABASE_URL`.
 
-CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,msrp,warn,notes,shortcodes`
-(`shortcodes` semicolon-separated; only `name` and `brand` required).
+CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,ndp,msrp,warn,notes,shortcodes`
+(`shortcodes` semicolon-separated; `ndp` truthy = `1/true/yes`; only `name` and `brand` required).
 
 ## Local development
 

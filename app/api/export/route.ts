@@ -18,6 +18,7 @@ export async function GET() {
     b.tier,
     b.myTier,
     b.vabcCode,
+    b.ndp ? "1" : "",
     b.msrp === null ? null : Number(b.msrp),
     b.warn,
     b.notes,

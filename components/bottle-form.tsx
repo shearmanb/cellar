@@ -11,6 +11,7 @@ export type BottleFormValues = {
   tier?: string | null;
   myTier?: string | null;
   vabcCode?: string | null;
+  ndp?: boolean | null;
   msrp?: string | null;
   warn?: string | null;
   notes?: string | null;
@@ -87,6 +88,13 @@ export function BottleForm({
       <div className="field">
         <label htmlFor="msrp">MSRP ($)</label>
         <input id="msrp" name="msrp" type="number" step="0.01" min="0" defaultValue={initial.msrp ?? ""} />
+      </div>
+      <div className="field">
+        <label htmlFor="ndp">Non-distiller producer</label>
+        <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", textTransform: "none" }}>
+          <input id="ndp" name="ndp" type="checkbox" defaultChecked={initial.ndp ?? false} style={{ width: "auto" }} />
+          <span className="muted">Sourced, not self-distilled (NDP)</span>
+        </label>
       </div>
       <div className="field full">
         <label htmlFor="shortcodes">Shortcodes (comma or newline separated)</label>

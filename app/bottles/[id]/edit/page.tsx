@@ -41,6 +41,7 @@ export default async function EditBottlePage({
           tier: bottle.tier,
           myTier: bottle.myTier,
           vabcCode: bottle.vabcCode,
+          ndp: bottle.ndp,
           msrp: bottle.msrp === null ? null : String(bottle.msrp),
           warn: bottle.warn,
           notes: bottle.notes,

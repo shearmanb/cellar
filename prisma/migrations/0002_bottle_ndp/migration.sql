@@ -1,0 +1,2 @@
+-- AddColumn
+ALTER TABLE "Bottle" ADD COLUMN "ndp" BOOLEAN NOT NULL DEFAULT false;

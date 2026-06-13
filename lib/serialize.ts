@@ -13,6 +13,7 @@ export function toApiBottle(b: BottleWithRelations) {
     tier: b.tier,
     myTier: b.myTier,
     vabcCode: b.vabcCode,
+    ndp: b.ndp,
     msrp: b.msrp === null ? null : Number(b.msrp),
     warn: b.warn,
     notes: b.notes,
