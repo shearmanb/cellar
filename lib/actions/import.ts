@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { parseCsv, CSV_HEADER } from "@/lib/csv";
 import { normalizeCode } from "@/lib/serialize";
+import { brandKey, applyBrandRule } from "@/lib/brand-rules";
 import { revalidatePath } from "next/cache";
 
 export type ImportResult = {
@@ -41,6 +42,10 @@ export async function importCsv(text: string): Promise<ImportResult> {
 
   const result: ImportResult = { created: 0, updated: 0, errors: [] };
 
+  // Brand rules fill blank fields per row (see lib/brand-rules.ts).
+  const rules = await prisma.brandRule.findMany();
+  const ruleByKey = new Map(rules.map((r) => [r.brandKey, r]));
+
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     const line = r + 1;
@@ -55,6 +60,10 @@ export async function importCsv(text: string): Promise<ImportResult> {
       const msrp = msrpRaw === null ? null : Number(msrpRaw);
       if (msrp !== null && Number.isNaN(msrp)) throw new Error(`bad msrp "${msrpRaw}"`);
 
+      // An absent/blank ndp cell is "unset" so a brand rule can supply it; a
+      // present cell is explicit and always wins.
+      const ndpCell = col(row, "ndp");
+      const ndpExplicit = ndpCell !== null;
       const data = {
         name,
         brand,
@@ -63,11 +72,12 @@ export async function importCsv(text: string): Promise<ImportResult> {
         tier: col(row, "tier"),
         myTier: col(row, "my_tier"),
         vabcCode: col(row, "vabc_code"),
-        ndp: ["1", "true", "yes", "y", "ndp"].includes((col(row, "ndp") ?? "").toLowerCase()),
+        ndp: ndpExplicit ? ["1", "true", "yes", "y", "ndp"].includes(ndpCell.toLowerCase()) : false,
         msrp,
         warn: col(row, "warn"),
         notes: col(row, "notes"),
       };
+      applyBrandRule(data, ruleByKey.get(brandKey(brand)), ndpExplicit);
       const codes = Array.from(
         new Set(
           (col(row, "shortcodes") ?? "")

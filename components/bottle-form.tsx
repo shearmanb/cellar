@@ -2,6 +2,14 @@
 
 import { useActionState } from "react";
 import type { FormState } from "@/lib/actions/bottles";
+import { brandKey } from "@/lib/brand-rules";
+
+export type BrandRuleHint = {
+  brandKey: string;
+  distillery: string | null;
+  category: string | null;
+  ndp: boolean | null;
+};
 
 export type BottleFormValues = {
   name?: string;
@@ -24,12 +32,27 @@ export function BottleForm({
   action,
   initial = {},
   submitLabel,
+  rules = [],
 }: {
   action: (prev: FormState, form: FormData) => Promise<FormState>;
   initial?: BottleFormValues;
   submitLabel: string;
+  rules?: BrandRuleHint[];
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+
+  // When the brand matches a rule, seed blank distillery/category and the NDP
+  // checkbox from it. Values stay editable — this is a default, not a lock.
+  function applyRuleForBrand(brand: string) {
+    const rule = rules.find((r) => r.brandKey === brandKey(brand));
+    if (!rule) return;
+    const dist = document.getElementById("distillery") as HTMLInputElement | null;
+    const cat = document.getElementById("category") as HTMLInputElement | null;
+    const ndp = document.getElementById("ndp") as HTMLInputElement | null;
+    if (rule.distillery && dist && !dist.value) dist.value = rule.distillery;
+    if (rule.category && cat && !cat.value) cat.value = rule.category;
+    if (rule.ndp != null && ndp) ndp.checked = rule.ndp;
+  }
 
   return (
     <form action={formAction} className="form-grid">
@@ -41,7 +64,15 @@ export function BottleForm({
       </div>
       <div className="field">
         <label htmlFor="brand">Brand *</label>
-        <input id="brand" name="brand" type="text" required defaultValue={initial.brand ?? ""} placeholder="Buffalo Trace" />
+        <input
+          id="brand"
+          name="brand"
+          type="text"
+          required
+          defaultValue={initial.brand ?? ""}
+          placeholder="Buffalo Trace"
+          onBlur={(e) => applyRuleForBrand(e.target.value)}
+        />
       </div>
       <div className="field">
         <label htmlFor="distillery">Distillery</label>

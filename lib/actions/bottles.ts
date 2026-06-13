@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { normalizeCode } from "@/lib/serialize";
+import { brandKey, applyBrandRule } from "@/lib/brand-rules";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -60,6 +61,11 @@ export async function createBottle(_prev: FormState, form: FormData): Promise<Fo
     const data = bottleData(form);
     const codes = parseShortcodes(clean(form.get("shortcodes")));
     await assertCodesAvailable(codes);
+    // Fill any blank distillery/category from a matching brand rule. The NDP
+    // checkbox is treated as explicit (the form's client-side prefill already
+    // seeded it from the rule, and the user can override before submit).
+    const rule = (await prisma.brandRule.findUnique({ where: { brandKey: brandKey(data.brand) } })) ?? undefined;
+    applyBrandRule(data, rule, true);
     await prisma.bottle.create({
       data: { ...data, aliases: { create: codes.map((code) => ({ code })) } },
     });
