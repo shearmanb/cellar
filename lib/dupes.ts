@@ -1,6 +1,55 @@
 // Suspected-duplicate detection for the /dupes review tab.
-// Same brand (case-insensitive) + high name similarity (Dice coefficient
-// over character bigrams), or identical normalized names.
+// Three layers:
+//   1. numeric guard — names with different numbers (age/proof/batch/size)
+//      are distinct products (Knob Creek 9 vs 12 Year).
+//   2. distinctive-token guard — after stripping brand, distillery, and
+//      generic whiskey words, if each name has its own distinct core words
+//      (e.g. "Locust" vs "Mazal"), they're different releases, not dupes.
+//   3. name similarity (Dice coefficient over character bigrams) above a
+//      threshold for whatever survives the guards.
+
+const GENERIC_WORDS = new Set([
+  "the", "a", "of", "and",
+  "bourbon", "whiskey", "whisky", "rye", "straight",
+  "year", "years", "yr", "yrs", "month", "months", "old",
+  "proof", "barrel", "barrels", "single", "small", "batch",
+  "kentucky", "indiana", "tennessee", "company", "co", "distillery",
+  "release", "edition", "reserve", "select", "bottled", "bond", "bib",
+]);
+
+function words(s: string): string[] {
+  return s.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+// Core identity words: name tokens minus brand/distillery tokens, generic
+// whiskey vocabulary, and bare numbers.
+function coreTokens(name: string, brand: string, distillery: string | null): Set<string> {
+  const exclude = new Set([...words(brand), ...(distillery ? words(distillery) : [])]);
+  const core = new Set<string>();
+  for (const w of words(name)) {
+    if (exclude.has(w) || GENERIC_WORDS.has(w) || /^\d+$/.test(w)) continue;
+    core.add(w);
+  }
+  return core;
+}
+
+function disjoint(a: Set<string>, b: Set<string>): boolean {
+  if (a.size === 0 || b.size === 0) return false;
+  for (const w of a) if (b.has(w)) return false;
+  return true;
+}
+
+function sameTokens(a: Set<string>, b: Set<string>): boolean {
+  if (a.size === 0 || a.size !== b.size) return false;
+  for (const w of a) if (!b.has(w)) return false;
+  return true;
+}
+
+// Names with different numbers (ages, proofs, batch numbers, years, sizes)
+// are almost always distinct products, not dupes.
+function numericTokens(s: string): string {
+  return (s.match(/\d+/g) ?? []).sort().join(",");
+}
 
 function bigrams(s: string): Map<string, number> {
   const m = new Map<string, number>();
@@ -24,19 +73,11 @@ export function nameSimilarity(a: string, b: string): number {
   return (2 * overlap) / total;
 }
 
-// Bottles whose names contain different numbers (ages, proofs, batch
-// numbers, years, sizes) are almost always distinct products, not dupes —
-// e.g. Knob Creek 9 vs 12 Year, Pappy 15 vs 20, Batch 1 vs Batch 2.
-function numericTokens(s: string): string {
-  return (s.match(/\d+/g) ?? []).sort().join(",");
-}
-
 export type DupeCandidate<B> = { a: B; b: B; score: number };
 
-export function findDupePairs<B extends { id: number; name: string; brand: string }>(
-  bottles: B[],
-  threshold = 0.82
-): DupeCandidate<B>[] {
+export function findDupePairs<
+  B extends { id: number; name: string; brand: string; distillery?: string | null },
+>(bottles: B[], threshold = 0.82): DupeCandidate<B>[] {
   const byBrand = new Map<string, B[]>();
   for (const b of bottles) {
     const key = b.brand.trim().toLowerCase();
@@ -45,11 +86,18 @@ export function findDupePairs<B extends { id: number; name: string; brand: strin
   const pairs: DupeCandidate<B>[] = [];
   for (const group of byBrand.values()) {
     for (let i = 0; i < group.length; i++) {
+      const x = group[i];
+      const coreX = coreTokens(x.name, x.brand, x.distillery ?? null);
       for (let j = i + 1; j < group.length; j++) {
-        if (numericTokens(group[i].name) !== numericTokens(group[j].name)) continue;
-        const score = nameSimilarity(group[i].name, group[j].name);
+        const y = group[j];
+        if (numericTokens(x.name) !== numericTokens(y.name)) continue;
+        const coreY = coreTokens(y.name, y.brand, y.distillery ?? null);
+        if (disjoint(coreX, coreY)) continue;
+        // Identical core words (e.g. "Daydream" vs "Daydream", different
+        // boilerplate) is a strong dupe signal on its own.
+        const score = sameTokens(coreX, coreY) ? 1 : nameSimilarity(x.name, y.name);
         if (score >= threshold) {
-          const [a, b] = group[i].id < group[j].id ? [group[i], group[j]] : [group[j], group[i]];
+          const [a, b] = x.id < y.id ? [x, y] : [y, x];
           pairs.push({ a, b, score });
         }
       }
