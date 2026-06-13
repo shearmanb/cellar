@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { normalizeCode } from "@/lib/serialize";
+import { normalizeCode, parseDateValue } from "@/lib/serialize";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -37,6 +37,9 @@ function bottleData(form: FormData) {
     tier: clean(form.get("tier")),
     myTier: clean(form.get("myTier")),
     vabcCode: clean(form.get("vabcCode")),
+    vabcAllocated: form.get("vabcAllocated") !== null,
+    addedToVabcAt: parseDateValue(clean(form.get("addedToVabcAt")), "Added to VABC website"),
+    firstAppearance: parseDateValue(clean(form.get("firstAppearance")), "First appearance"),
     msrp,
     warn: clean(form.get("warn")),
     notes: clean(form.get("notes")),

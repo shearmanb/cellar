@@ -11,6 +11,9 @@ export type BottleFormValues = {
   tier?: string | null;
   myTier?: string | null;
   vabcCode?: string | null;
+  vabcAllocated?: boolean;
+  addedToVabcAt?: string | null;
+  firstAppearance?: string | null;
   msrp?: string | null;
   warn?: string | null;
   notes?: string | null;
@@ -83,6 +86,36 @@ export function BottleForm({
       <div className="field">
         <label htmlFor="vabcCode">VA ABC code</label>
         <input id="vabcCode" name="vabcCode" type="text" defaultValue={initial.vabcCode ?? ""} />
+      </div>
+      <div className="field">
+        <label htmlFor="vabcAllocated">VA ABC allocated</label>
+        <label className="checkbox-row">
+          <input
+            id="vabcAllocated"
+            name="vabcAllocated"
+            type="checkbox"
+            defaultChecked={initial.vabcAllocated ?? false}
+          />
+          Allocated / lottery product
+        </label>
+      </div>
+      <div className="field">
+        <label htmlFor="addedToVabcAt">Added to VABC website</label>
+        <input
+          id="addedToVabcAt"
+          name="addedToVabcAt"
+          type="date"
+          defaultValue={initial.addedToVabcAt ?? ""}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="firstAppearance">First appearance</label>
+        <input
+          id="firstAppearance"
+          name="firstAppearance"
+          type="date"
+          defaultValue={initial.firstAppearance ?? ""}
+        />
       </div>
       <div className="field">
         <label htmlFor="msrp">MSRP ($)</label>

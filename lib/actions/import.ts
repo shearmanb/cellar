@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { parseCsv, CSV_HEADER } from "@/lib/csv";
-import { normalizeCode } from "@/lib/serialize";
+import { normalizeCode, parseDateValue, parseBoolValue } from "@/lib/serialize";
 import { revalidatePath } from "next/cache";
 
 export type ImportResult = {
@@ -63,6 +63,9 @@ export async function importCsv(text: string): Promise<ImportResult> {
         tier: col(row, "tier"),
         myTier: col(row, "my_tier"),
         vabcCode: col(row, "vabc_code"),
+        vabcAllocated: parseBoolValue(col(row, "vabc_allocated")),
+        addedToVabcAt: parseDateValue(col(row, "added_to_vabc"), "added_to_vabc"),
+        firstAppearance: parseDateValue(col(row, "first_appearance"), "first_appearance"),
         msrp,
         warn: col(row, "warn"),
         notes: col(row, "notes"),

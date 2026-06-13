@@ -30,10 +30,23 @@ export default async function BottlesPage({
     orderBy: [{ tier: "asc" }, { name: "asc" }],
   });
 
+  // Carry the active filters across the Compact ↔ All fields toggle.
+  const qs = new URLSearchParams();
+  if (q) qs.set("q", q);
+  if (tier) qs.set("tier", tier);
+  if (showArchived) qs.set("archived", "1");
+  const suffix = qs.toString() ? `?${qs}` : "";
+
   return (
     <>
       <h1>Bottles</h1>
       <div className="toolbar">
+        <div className="view-toggle">
+          <Link href={`/bottles${suffix}`} className="active">
+            Compact
+          </Link>
+          <Link href={`/bottles/all${suffix}`}>All fields</Link>
+        </div>
         <form action="/bottles" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <input
             type="search"
@@ -84,6 +97,11 @@ export default async function BottlesPage({
               </td>
               <td>
                 <Link href={`/bottles/${b.id}/edit`}>{b.name}</Link>
+                {b.vabcAllocated ? (
+                  <span className="muted" style={{ fontSize: "0.75rem", marginLeft: "0.4rem" }}>
+                    · allocated
+                  </span>
+                ) : null}
                 {b.warn ? <div className="warn">⚠ {b.warn}</div> : null}
                 {b.releases.length > 0 ? (
                   <div className="muted" style={{ fontSize: "0.8rem" }}>

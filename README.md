@@ -43,7 +43,10 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
 
 ## Web UI
 
-- `/bottles` — searchable catalog (name/brand/shortcode), tier filter, tier chips
+- `/bottles` — searchable catalog (name/brand/shortcode), tier filter, tier chips.
+  Toggle to **All fields** for the full view.
+- `/bottles/all` — read-only grid showing *every* stored field for every bottle
+  (same search/tier/archived filters, horizontally scrollable)
 - `/bottles/new`, `/bottles/[id]/edit` — entry forms (main editing flow), releases, archive
 - `/pending` — review queue: match to existing bottle / create new / ignore. Includes a
   "Check stores now" button when `SYNC_STORES` is set (e.g.
@@ -56,8 +59,9 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   without create. For mass grid edits, export CSV → edit in Excel → re-import, or run
   `npm run db:studio` locally against the production `DATABASE_URL`.
 
-CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,msrp,warn,notes,shortcodes`
-(`shortcodes` semicolon-separated; only `name` and `brand` required).
+CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,vabc_allocated,added_to_vabc,first_appearance,msrp,warn,notes,shortcodes`
+(`shortcodes` semicolon-separated; `vabc_allocated` is `true`/`false`; `added_to_vabc`
+and `first_appearance` are dates as `YYYY-MM-DD`; only `name` and `brand` required).
 
 ## Local development
 

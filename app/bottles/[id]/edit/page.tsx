@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { BottleForm } from "@/components/bottle-form";
 import { updateBottle, setArchived, addRelease, deleteRelease } from "@/lib/actions/bottles";
+import { formatDateValue } from "@/lib/serialize";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,9 @@ export default async function EditBottlePage({
           tier: bottle.tier,
           myTier: bottle.myTier,
           vabcCode: bottle.vabcCode,
+          vabcAllocated: bottle.vabcAllocated,
+          addedToVabcAt: formatDateValue(bottle.addedToVabcAt),
+          firstAppearance: formatDateValue(bottle.firstAppearance),
           msrp: bottle.msrp === null ? null : String(bottle.msrp),
           warn: bottle.warn,
           notes: bottle.notes,

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { toCsv, CSV_HEADER } from "@/lib/csv";
+import { formatDateValue } from "@/lib/serialize";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,9 @@ export async function GET() {
     b.tier,
     b.myTier,
     b.vabcCode,
+    b.vabcAllocated ? "true" : "false",
+    formatDateValue(b.addedToVabcAt),
+    formatDateValue(b.firstAppearance),
     b.msrp === null ? null : Number(b.msrp),
     b.warn,
     b.notes,

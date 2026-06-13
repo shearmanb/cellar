@@ -18,7 +18,10 @@ model Bottle {
   category   String? // Bourbon, Rye, Scotch, ...
   tier       String? // S / A / B / C
   myTier     String? // personal tier override
-  vabcCode   String? // VA ABC product code
+  vabcCode   String?   // VA ABC product code
+  vabcAllocated   Boolean   @default(false) // VA ABC allocated / lottery product
+  addedToVabcAt   DateTime? @db.Date // date the bottle was added to the VA ABC website
+  firstAppearance DateTime? @db.Date // date the bottle was first seen / first appeared
   msrp       Decimal? @db.Decimal(10, 2)
   warn       String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
   notes      String?
