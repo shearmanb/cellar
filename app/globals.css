@@ -49,6 +49,79 @@ a:hover {
   gap: 1.25rem;
 }
 
+/* RickHouse cross-app launcher */
+.rickhouse {
+  position: relative;
+  margin-left: auto;
+}
+.rickhouse > summary {
+  list-style: none;
+  cursor: pointer;
+  background: var(--accent);
+  color: #1a1208;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  user-select: none;
+}
+.rickhouse > summary::-webkit-details-marker {
+  display: none;
+}
+.rickhouse > summary:hover {
+  filter: brightness(1.1);
+}
+.rickhouse-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 50;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+.rickhouse-menu .rh-app {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.rickhouse-menu a.rh-app:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.rickhouse-menu .rh-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.rickhouse-menu .rh-tag {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.rickhouse-menu .rh-app.current {
+  border-style: dashed;
+  opacity: 0.7;
+}
+.rickhouse-menu .rh-app.current .rh-tag::after {
+  content: " · here";
+  color: var(--accent);
+}
+
 .container {
   max-width: 1100px;
   margin: 0 auto;

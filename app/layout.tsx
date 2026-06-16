@@ -27,6 +27,27 @@ export default function RootLayout({
             <Link href="/import">Import</Link>
             <a href="/api/export">Export CSV</a>
           </nav>
+          <details className="rickhouse">
+            <summary>🏠 RickHouse</summary>
+            <div className="rickhouse-menu">
+              <span className="rh-app current">
+                <span className="rh-name">Cellar</span>
+                <span className="rh-tag">Bottle DB</span>
+              </span>
+              <a className="rh-app" href="https://shearmanb.github.io/beacon/">
+                <span className="rh-name">Beacon</span>
+                <span className="rh-tag">Tracking</span>
+              </a>
+              <a className="rh-app" href="https://shearmanb.github.io/drop-tracker/">
+                <span className="rh-name">Unicorn Slayer</span>
+                <span className="rh-tag">Hunting</span>
+              </a>
+              <a className="rh-app" href="https://finish-production-0ad6.up.railway.app/">
+                <span className="rh-name">Finish</span>
+                <span className="rh-tag">Tasting</span>
+              </a>
+            </div>
+          </details>
         </header>
         <main className="container">{children}</main>
       </body>
