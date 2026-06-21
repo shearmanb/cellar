@@ -26,6 +26,7 @@ export type BottleFormValues = {
   msrp?: string | null;
   warn?: string | null;
   notes?: string | null;
+  displayValue?: string | null;
   shortcodes?: string;
 };
 
@@ -64,6 +65,10 @@ export function BottleForm({
       <div className="field full">
         <label htmlFor="name">Name *</label>
         <input id="name" name="name" type="text" required defaultValue={initial.name ?? ""} placeholder="George T. Stagg Bourbon" />
+      </div>
+      <div className="field full">
+        <label htmlFor="displayValue">Drop Tracker display value</label>
+        <input id="displayValue" name="displayValue" type="text" defaultValue={initial.displayValue ?? ""} placeholder="Label shown in Drop Tracker — blank keeps this bottle out of Drop Tracker" />
       </div>
       <div className="field">
         <label htmlFor="brand">Brand *</label>

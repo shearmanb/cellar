@@ -71,4 +71,5 @@ export const CSV_HEADER = [
   "warn",
   "notes",
   "shortcodes",
+  "display_value",
 ];

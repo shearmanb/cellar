@@ -17,6 +17,7 @@ type Filters = {
   myTier: string;
   vabc: string;
   ndp: string;
+  display: string;
   msrpMin: string;
   msrpMax: string;
   archived: string;
@@ -37,6 +38,7 @@ export default async function BottlesPage({
     myTier: sp.myTier ?? "",
     vabc: sp.vabc ?? "",
     ndp: sp.ndp ?? "",
+    display: sp.display ?? "",
     msrpMin: sp.msrpMin ?? "",
     msrpMax: sp.msrpMax ?? "",
     archived: sp.archived ?? "",
@@ -54,6 +56,23 @@ export default async function BottlesPage({
   const msrpMin = f.msrpMin && !Number.isNaN(Number(f.msrpMin)) ? Number(f.msrpMin) : undefined;
   const msrpMax = f.msrpMax && !Number.isNaN(Number(f.msrpMax)) ? Number(f.msrpMax) : undefined;
 
+  // Clauses that carry their own OR (free-text search and the display-value
+  // presence filter) go in an AND array so they don't clobber each other.
+  const and: Prisma.BottleWhereInput[] = [];
+  if (f.q) {
+    and.push({
+      OR: [
+        { name: { contains: f.q, mode: "insensitive" } },
+        { brand: { contains: f.q, mode: "insensitive" } },
+        { distillery: { contains: f.q, mode: "insensitive" } },
+        { aliases: { some: { code: { contains: f.q.toLowerCase() } } } },
+      ],
+    });
+  }
+  // Drop Tracker display-value filter: "missing" = not in Drop Tracker, "set" = in it.
+  if (shows("displayValue") && f.display === "missing") and.push({ OR: [{ displayValue: null }, { displayValue: "" }] });
+  else if (shows("displayValue") && f.display === "set") and.push({ displayValue: { not: null }, NOT: { displayValue: "" } });
+
   const where: Prisma.BottleWhereInput = {
     ...(showArchived ? {} : { isArchived: false }),
     ...(shows("brand") && f.brand ? { brand: f.brand } : {}),
@@ -66,16 +85,7 @@ export default async function BottlesPage({
     ...(shows("msrp") && (msrpMin !== undefined || msrpMax !== undefined)
       ? { msrp: { ...(msrpMin !== undefined ? { gte: msrpMin } : {}), ...(msrpMax !== undefined ? { lte: msrpMax } : {}) } }
       : {}),
-    ...(f.q
-      ? {
-          OR: [
-            { name: { contains: f.q, mode: "insensitive" } },
-            { brand: { contains: f.q, mode: "insensitive" } },
-            { distillery: { contains: f.q, mode: "insensitive" } },
-            { aliases: { some: { code: { contains: f.q.toLowerCase() } } } },
-          ],
-        }
-      : {}),
+    ...(and.length ? { AND: and } : {}),
   };
 
   // Distinct values to populate the brand/distillery/category dropdowns.
@@ -99,9 +109,9 @@ export default async function BottlesPage({
   const optionsFor = (field?: "brand" | "distillery" | "category") =>
     field === "brand" ? brands : field === "distillery" ? distilleries : field === "category" ? categories : [];
   const valueFor = (key: ColumnKey): string =>
-    ({ brand: f.brand, distillery: f.distillery, category: f.category, tier: f.tier, myTier: f.myTier, vabc: f.vabc, ndp: f.ndp } as Record<string, string>)[key] ?? "";
+    ({ brand: f.brand, distillery: f.distillery, category: f.category, tier: f.tier, myTier: f.myTier, vabc: f.vabc, ndp: f.ndp, displayValue: f.display } as Record<string, string>)[key] ?? "";
   const nameFor = (key: ColumnKey): string =>
-    key === "vabc" ? "vabc" : key;
+    key === "vabc" ? "vabc" : key === "displayValue" ? "display" : key;
 
   // Carry the active filters across the Compact ↔ All fields toggle.
   const qs = new URLSearchParams();
@@ -173,6 +183,15 @@ export default async function BottlesPage({
                   <option value="">{c.label}: all</option>
                   <option value="yes">{c.label}: yes</option>
                   <option value="no">{c.label}: no</option>
+                </select>
+              );
+            }
+            if (c.filter === "presence") {
+              return (
+                <select key={c.key} name={nameFor(c.key)} defaultValue={valueFor(c.key)} aria-label={c.label}>
+                  <option value="">{c.label}: all</option>
+                  <option value="missing">Missing display name</option>
+                  <option value="set">Has display name</option>
                 </select>
               );
             }
@@ -259,6 +278,14 @@ function renderCell(key: ColumnKey, b: BottleRow) {
   switch (key) {
     case "tier":
       return b.tier ? <span className={`tier-chip tier-${b.tier}`}>{b.tier}</span> : null;
+    case "displayValue":
+      return b.displayValue ? (
+        b.displayValue
+      ) : (
+        <Link href={`/bottles/${b.id}/edit`} className="warn">
+          + add — not in Drop Tracker
+        </Link>
+      );
     case "myTier":
       return b.myTier ? <span className={`tier-chip tier-${b.myTier}`}>{b.myTier}</span> : null;
     case "brand":

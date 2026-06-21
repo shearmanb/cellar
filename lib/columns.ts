@@ -7,6 +7,7 @@
 
 export type ColumnKey =
   | "tier"
+  | "displayValue"
   | "brand"
   | "distillery"
   | "category"
@@ -20,8 +21,9 @@ export type ColumnKey =
 
 // How the bottle-list filter row renders the control for this column.
 // null = displayed but not filterable on its own (e.g. shortcodes are
-// covered by the global search box).
-export type FilterKind = "tier" | "select" | "text" | "bool" | "range" | null;
+// covered by the global search box). "presence" = a set/missing dropdown
+// for an optional free-text field (used by the Drop Tracker display value).
+export type FilterKind = "tier" | "select" | "text" | "bool" | "range" | "presence" | null;
 
 export type ColumnDef = {
   key: ColumnKey;
@@ -33,6 +35,7 @@ export type ColumnDef = {
 
 export const COLUMNS: ColumnDef[] = [
   { key: "tier", label: "Tier", filter: "tier" },
+  { key: "displayValue", label: "Display (Drop Tracker)", filter: "presence" },
   { key: "brand", label: "Brand", filter: "select", field: "brand" },
   { key: "distillery", label: "Distillery", filter: "select", field: "distillery" },
   { key: "category", label: "Category", filter: "select", field: "category" },
@@ -47,7 +50,7 @@ export const COLUMNS: ColumnDef[] = [
 
 // Matches the original bottle-list view, so existing behavior is unchanged
 // until the user picks something in the Control Panel.
-export const DEFAULT_COLUMNS: ColumnKey[] = ["tier", "brand", "shortcodes", "vabc"];
+export const DEFAULT_COLUMNS: ColumnKey[] = ["tier", "displayValue", "brand", "shortcodes", "vabc"];
 
 export const COLUMN_COOKIE = "cellar_cols";
 

@@ -33,12 +33,15 @@ export function toApiBottle(b: BottleWithRelations) {
   };
 }
 
-// Compatibility shape matching Drop Tracker's parseBottle():
-// id | name | brand | tier | codes(comma-sep) | warn | abcNo
+// Compatibility shape for Drop Tracker's bottle loader:
+// id | name | displayValue | brand | tier | codes(comma-sep) | warn | abcNo
+// displayValue is the label the app shows AND its include switch (blank = the
+// bottle is not part of Drop Tracker's list).
 export function toDropTrackerBottle(b: BottleWithRelations) {
   return {
     id: b.id,
     name: b.name,
+    displayValue: b.displayValue ?? "",
     brand: b.brand,
     tier: b.tier ?? "",
     codes: b.aliases.map((a) => a.code).join(","),

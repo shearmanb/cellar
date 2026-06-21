@@ -26,6 +26,7 @@ model Bottle {
   msrp       Decimal? @db.Decimal(10, 2)
   warn       String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
   notes      String?
+  displayValue String? // Drop Tracker label + inclusion switch — a bottle appears in Drop Tracker only when this is set
   isArchived Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

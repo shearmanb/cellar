@@ -33,7 +33,7 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/api/bottles` | GET | Full canonical catalog (`?archived=1` to include archived) |
-| `/api/drop-tracker` | GET | Drop Tracker compatibility shape: `{id, name, brand, tier, codes, warn, abcNo}` |
+| `/api/drop-tracker` | GET | Drop Tracker hunt list: `{id, name, displayValue, brand, tier, codes, warn, abcNo}` — only bottles whose `displayValue` is set |
 | `/api/listings` | GET | Beacon's map: `{store, handle, bottleId}` (`?store=` to filter) |
 | `/api/match?q=EHT,GTS` | GET | Normalization-as-a-service: freeform tokens → `{matched, unmatched}` (exact alias, then unique-prefix) |
 | `/api/pending` | GET | Current pending queue |
@@ -64,9 +64,11 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   without create. For mass grid edits, export CSV → edit in Excel → re-import, or run
   `npm run db:studio` locally against the production `DATABASE_URL`.
 
-CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,ndp,vabc_allocated,added_to_vabc,first_appearance,msrp,warn,notes,shortcodes`
+CSV columns: `id,name,brand,distillery,category,tier,my_tier,vabc_code,ndp,vabc_allocated,added_to_vabc,first_appearance,msrp,warn,notes,shortcodes,display_value`
 (`shortcodes` semicolon-separated; `ndp` truthy = `1/true/yes`; `vabc_allocated` is `true`/`false`;
-`added_to_vabc` and `first_appearance` are dates as `YYYY-MM-DD`; only `name` and `brand` required).
+`added_to_vabc` and `first_appearance` are dates as `YYYY-MM-DD`; only `name` and `brand` required.
+`display_value` is the Drop Tracker label and include switch — set it to add a bottle to Drop
+Tracker, clear it to remove. Omit the column entirely to leave existing display values untouched.)
 
 ## Local development
 
@@ -92,8 +94,9 @@ npm run dev
    ids 1–69) and import at `/import`. Reconcile the spec-vs-code field drift here —
    the CSV format is the superset of both.
 2. **Drop Tracker** (small): point its bottle fetch at `GET /api/drop-tracker` instead
-   of the Apps Script `?action=getBottles` URL. The response fields match its
-   `parseBottle()` exactly. The localStorage cache keeps working unchanged.
+   of the Apps Script `?action=getBottles` URL. A bottle joins Drop Tracker's picker
+   when you give it a `display_value` (the label the app shows); shortcodes are now
+   optional. The localStorage cache keeps working unchanged.
 3. **Beacon** (small–moderate): each loop, fetch `GET /api/listings?store=<site>` to tag
    known products with `bottleId`; POST products with no mapping to `/api/pending`
    (replaces the dead `pending_bottles.json` stub). Resolve the queue at `/pending`.

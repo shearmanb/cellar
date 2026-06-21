@@ -54,6 +54,7 @@ export default async function EditBottlePage({
           msrp: bottle.msrp === null ? null : String(bottle.msrp),
           warn: bottle.warn,
           notes: bottle.notes,
+          displayValue: bottle.displayValue,
           shortcodes: bottle.aliases.map((a) => a.code).join(", "),
         }}
       />

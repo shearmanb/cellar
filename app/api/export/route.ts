@@ -27,6 +27,7 @@ export async function GET() {
     b.warn,
     b.notes,
     b.aliases.map((a) => a.code).join(";"),
+    b.displayValue,
   ]);
   const csv = toCsv([CSV_HEADER, ...rows]);
   return new Response(csv, {

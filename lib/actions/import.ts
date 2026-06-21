@@ -79,6 +79,11 @@ export async function importCsv(text: string): Promise<ImportResult> {
         msrp,
         warn: col(row, "warn"),
         notes: col(row, "notes"),
+        // Only touch displayValue when the column is present, so importing an
+        // older CSV (without it) never blanks the Drop Tracker list.
+        ...(header.includes("display_value")
+          ? { displayValue: col(row, "display_value") }
+          : {}),
       };
       applyBrandRule(data, ruleByKey.get(brandKey(brand)), ndpExplicit);
       const codes = Array.from(

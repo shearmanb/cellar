@@ -45,6 +45,7 @@ function bottleData(form: FormData) {
     msrp,
     warn: clean(form.get("warn")),
     notes: clean(form.get("notes")),
+    displayValue: clean(form.get("displayValue")),
   };
 }
 
