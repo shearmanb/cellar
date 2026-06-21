@@ -19,6 +19,7 @@ export async function GET() {
     b.tier,
     b.myTier,
     b.vabcCode,
+    b.ndp ? "1" : "",
     b.vabcAllocated ? "true" : "false",
     formatDateValue(b.addedToVabcAt),
     formatDateValue(b.firstAppearance),

@@ -18,7 +18,8 @@ model Bottle {
   category   String? // Bourbon, Rye, Scotch, ...
   tier       String? // S / A / B / C
   myTier     String? // personal tier override
-  vabcCode   String?   // VA ABC product code
+  vabcCode        String?   // VA ABC product code
+  ndp             Boolean   @default(false) // non-distiller producer (sourced, not self-distilled)
   vabcAllocated   Boolean   @default(false) // VA ABC allocated / lottery product
   addedToVabcAt   DateTime? @db.Date // date the bottle was added to the VA ABC website
   firstAppearance DateTime? @db.Date // date the bottle was first seen / first appeared
@@ -116,4 +117,19 @@ model DupeReview {
   createdAt DateTime @default(now())
 
   @@unique([aId, bId])
+}
+
+// Brand-level defaults. When a bottle's brand matches (case-insensitively
+// on brandKey), these values fill any blank fields at create/import time and
+// via the Control Panel backfill. They are defaults only — a bottle can be
+// edited to override them afterward.
+model BrandRule {
+  id         Int      @id @default(autoincrement())
+  brand      String // display form as typed, e.g. "Smoke Wagon"
+  brandKey   String   @unique // lowercased/space-collapsed match key
+  distillery String?
+  category   String?
+  ndp        Boolean? // null = rule leaves NDP untouched
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

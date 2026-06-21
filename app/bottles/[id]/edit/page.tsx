@@ -21,6 +21,10 @@ export default async function EditBottlePage({
   });
   if (!bottle) notFound();
 
+  const rules = await prisma.brandRule.findMany({
+    select: { brandKey: true, distillery: true, category: true, ndp: true },
+  });
+
   const updateAction = updateBottle.bind(null, id);
   const archiveAction = setArchived.bind(null, id, !bottle.isArchived);
   const addReleaseAction = addRelease.bind(null, id);
@@ -34,6 +38,7 @@ export default async function EditBottlePage({
       <BottleForm
         action={updateAction}
         submitLabel="Save changes"
+        rules={rules}
         initial={{
           name: bottle.name,
           brand: bottle.brand,
@@ -42,6 +47,7 @@ export default async function EditBottlePage({
           tier: bottle.tier,
           myTier: bottle.myTier,
           vabcCode: bottle.vabcCode,
+          ndp: bottle.ndp,
           vabcAllocated: bottle.vabcAllocated,
           addedToVabcAt: formatDateValue(bottle.addedToVabcAt),
           firstAppearance: formatDateValue(bottle.firstAppearance),

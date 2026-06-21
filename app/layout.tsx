@@ -25,6 +25,7 @@ export default function RootLayout({
             <Link href="/pending">Pending</Link>
             <Link href="/dupes">Dupes</Link>
             <Link href="/import">Import</Link>
+            <Link href="/control-panel">Control panel</Link>
             <a href="/api/export">Export CSV</a>
           </nav>
           <details className="rickhouse">

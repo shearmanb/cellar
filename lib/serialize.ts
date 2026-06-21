@@ -13,6 +13,7 @@ export function toApiBottle(b: BottleWithRelations) {
     tier: b.tier,
     myTier: b.myTier,
     vabcCode: b.vabcCode,
+    ndp: b.ndp,
     vabcAllocated: b.vabcAllocated,
     addedToVabcAt: formatDateValue(b.addedToVabcAt),
     firstAppearance: formatDateValue(b.firstAppearance),
