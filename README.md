@@ -14,7 +14,8 @@ Bottle (expression-level, e.g. "George T. Stagg" — immutable integer id)
  ├─ Release[]      optional vintage/batch children (e.g. 2024 vs 2025), only when needed
  └─ StoreListing[] {store, handle} → bottleId mapping (Beacon's dedupe layer)
 
-PendingBottle      inbound review queue — the only write path for consuming apps
+PendingBottle      inbound review queue — consuming apps (Beacon) and the operator
+                   bookmarklet/quick-add inbox both land here
 ```
 
 Key rules:
@@ -53,6 +54,22 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   **brand rules** (brand → default distillery/category/NDP), applied as fill-the-blanks
   on import + new-bottle entry, with a button to backfill existing bottles
 - `/bottles/new`, `/bottles/[id]/edit` — entry forms (main editing flow), releases, archive
+- `/add` — **Quick add**: paste a store title, listing, tasting notes, or JSON (or arrive from
+  the bookmarklet) and Cellar parses it into name/brand/category/price/notes, then adds it to the
+  review **queue** (a `PendingBottle` with `store = quickadd`). Set `CELLAR_ADD_SECRET` to gate
+  adding behind a shared secret — the page still loads (so the bookmarklet can prefill it), but
+  the write is unlocked once per browser and enforced server-side; unset = open.
+- `/queue` — **mobile triage** of quick-add captures: one big card at a time with a fast
+  yes / no / maybe (✅ create the bottle · 🤔 decide later · ❌ discard), plus a "looks like #N"
+  shortcut to map an obvious duplicate onto an existing bottle instead of minting a new one.
+  Accepting applies the same brand-rule fill + shortcode-collision checks as `/bottles/new`; tier,
+  VA ABC, and releases are filled in afterward on the edit page. (Beacon's automated listings stay
+  on `/pending`.)
+- `/bookmarklet` — installs a one-click browser bookmarklet that scrapes the page you're on
+  (title, current text selection, Open Graph tags, JSON-LD product data) and opens `/add` with
+  the fields prefilled. It only reads the page and passes data in the URL hash (no cross-origin
+  fetch), so it works on most sites; the `/add` paste box is the fallback when a site's CSP
+  blocks bookmarklets.
 - `/pending` — review queue: match to existing bottle / create new / ignore. Includes a
   "Check stores now" button when `SYNC_STORES` is set (e.g.
   `SYNC_STORES=thereveries=https://store-url`) — Cellar polls each store's public
@@ -86,6 +103,8 @@ npm run dev
 2. On the app service set variables:
    - `DATABASE_URL` → reference the Postgres service's `DATABASE_URL`
    - `CELLAR_API_TOKEN` → `openssl rand -hex 24`
+   - `CELLAR_ADD_SECRET` (optional) → a shared secret that gates the quick-add writes (adding to
+     the queue and accepting from it)
 3. `railway.json` handles the rest (`prisma migrate deploy` runs pre-deploy).
 
 ## Migrating the consuming apps

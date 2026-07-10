@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description: "Master bottle database — single source of truth",
 };
 
+export const viewport = { width: "device-width", initialScale: 1 };
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,6 +24,8 @@ export default function RootLayout({
           <nav>
             <Link href="/bottles">Bottles</Link>
             <Link href="/bottles/all">All fields</Link>
+            <Link href="/add">Add</Link>
+            <Link href="/queue">Queue</Link>
             <Link href="/pending">Pending</Link>
             <Link href="/dupes">Dupes</Link>
             <Link href="/import">Import</Link>
