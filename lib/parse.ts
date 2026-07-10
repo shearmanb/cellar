@@ -113,8 +113,63 @@ function detectBrand(name: string, knownBrands: string[]): string {
   return best;
 }
 
-// A single messy title / notes blob → fields. Extracts a price and URL, drops
-// size tokens, guesses category, and matches a leading brand.
+// Whiskey mashbill → category by the US legal-definition dominant grain, e.g.
+// "60% Corn, 36% Rye, 4% Malted Barley" → Bourbon. Authoritative over keyword
+// guessing, which trips on "36% Rye" or a subreddit tag like r/Bourbon.
+function categoryFromMashbill(mashbill: string): string {
+  const g = { corn: 0, rye: 0, wheat: 0, malt: 0 };
+  const re = /(\d{1,3})\s*%\s*(malted\s+barley|barley|malt|corn|rye|wheat)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(mashbill)) !== null) {
+    const pct = Number(m[1]);
+    const grain = m[2].toLowerCase();
+    if (grain.includes("corn")) g.corn = Math.max(g.corn, pct);
+    else if (grain.includes("rye")) g.rye = Math.max(g.rye, pct);
+    else if (grain.includes("wheat")) g.wheat = Math.max(g.wheat, pct);
+    else g.malt = Math.max(g.malt, pct);
+  }
+  if (g.corn >= 51) return "Bourbon";
+  if (g.rye >= 51) return "Rye";
+  if (g.wheat >= 51) return "Wheat Whiskey";
+  if (g.malt >= 51) return "Malt Whiskey";
+  return g.corn || g.rye || g.wheat || g.malt ? "American Whiskey" : "";
+}
+
+// Strip store single-barrel-pick noise so the catalog name is the bottle, not
+// the pick: leading "Week 40 – " / "Barrel #12 - ", subreddit tags, in-name
+// mashbill fragments ("36% Rye"), and trailing "… Single Barrel Selection" /
+// "Store Pick". Bare "Single Barrel" (e.g. Blanton's) is kept — only stripped
+// when it's clearly a pick suffix.
+function cleanBottleName(raw: string): string {
+  return raw
+    .replace(/^\s*(week|barrel|pick|batch|cask|selection)\s*#?\s*\d+\s*[–\-—:|]\s*/i, "")
+    .replace(/\br\/\w+\b/gi, " ")
+    .replace(/\b\d{1,3}\s*%\s*(rye|corn|wheat|malted?\s*barley|barley|malt)\b/gi, " ")
+    .replace(
+      /\s*[–\-—|]?\s*(single\s*barrel\s*(selection|pick)|barrel\s*(pick|selection|select)|store\s*pick|hand[\s-]*(picked|selected)[\w\s]*|private\s*(selection|barrel))\s*$/i,
+      " "
+    )
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s*[–\-—|,]\s*$/u, "")
+    .trim();
+}
+
+// Best-effort brand from a cleaned name when it isn't already in the catalog:
+// the leading proper-noun words before an age/number/spec token. "Penelope
+// Estate 10 Year" → "Penelope Estate". Capped at three words; a guess to fix.
+function guessBrandFromName(name: string): string {
+  const tokens = name.split(/\s+/).filter(Boolean);
+  let stop = tokens.findIndex(
+    (t) => /^\d/.test(t) || /^(single|small|straight|barrel|cask|bottled|bonded|bib)$/i.test(t)
+  );
+  if (stop < 0) stop = Math.min(2, tokens.length);
+  const brand = tokens.slice(0, Math.min(stop, 3)).join(" ").trim();
+  return brand.length >= 2 ? brand : "";
+}
+
+// A messy paste → fields. Handles a plain title/description and a "Key: value"
+// spec sheet (single-barrel picks, review posts) with a mashbill, and always
+// lets the tasting notes lead the notes field.
 export function parseFreeText(raw: string, knownBrands: string[] = []): ParsedBottle {
   const out = emptyParsed();
   out.source = "text";
@@ -125,32 +180,63 @@ export function parseFreeText(raw: string, knownBrands: string[] = []): ParsedBo
   if (um) out.url = um[0];
 
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  // Title = first line that isn't just a bare URL; the rest becomes notes.
-  let titleIdx = lines.findIndex((l) => !/^https?:\/\/\S+$/i.test(l));
-  if (titleIdx < 0) titleIdx = 0;
-  let title = lines[titleIdx] ?? "";
-  const rest = lines
-    .filter((_, i) => i !== titleIdx)
-    .filter((l) => !/^https?:\/\/\S+$/i.test(l))
-    .join("\n")
-    .trim();
+  const isUrlLine = (l: string) => /^https?:\/\/\S+$/i.test(l);
 
-  const pm = title.match(PRICE_RE);
-  if (pm) {
-    out.msrp = toPrice(pm[1]);
-    title = title.replace(pm[0], " ");
+  // Split into recognized "Key: value" specs and plain lines.
+  const specs: { key: string; field: string | null; value: string }[] = [];
+  const plain: string[] = [];
+  for (const line of lines) {
+    const m = line.match(/^([A-Za-z][A-Za-z0-9'’./ ]{0,28}?)\s*:\s*(.+)$/);
+    if (m) specs.push({ key: m[1].trim(), field: classifyKey(m[1]), value: m[2].trim() });
+    else plain.push(line);
   }
+  const values = (f: string) => specs.filter((s) => s.field === f).map((s) => s.value);
 
-  title = title
-    .replace(SIZE_RE, " ")
-    .replace(/\s{2,}/g, " ")
-    .replace(/[\s|•·,\-–—]+$/u, "")
-    .trim();
+  // Name: an explicit name/title key, else the first non-URL plain line, cleaned.
+  const titleLine = plain.find((l) => !isUrlLine(l)) ?? "";
+  let name = (values("name")[0] ?? "").trim();
+  let priceFromTitle = "";
+  if (!name && titleLine) {
+    let t = titleLine;
+    const pm = t.match(PRICE_RE);
+    if (pm) {
+      priceFromTitle = toPrice(pm[1]);
+      t = t.replace(pm[0], " ");
+    }
+    name = cleanBottleName(t.replace(SIZE_RE, " "));
+  }
+  out.name = name;
 
-  out.name = title;
-  out.brand = detectBrand(title, knownBrands);
-  out.category = guessCategory(text);
-  out.notes = rest;
+  // Brand: explicit key → known-brand prefix → leading-words guess.
+  out.brand =
+    (values("brand")[0] ?? "").trim() || detectBrand(name, knownBrands) || guessBrandFromName(name);
+
+  // Category: mashbill (authoritative) → explicit key → keyword in the name.
+  const mashbill = values("mashbill")[0];
+  out.category =
+    (mashbill ? categoryFromMashbill(mashbill) : "") ||
+    (values("category")[0] ?? "").trim() ||
+    guessCategory(name);
+
+  if (values("distillery")[0]) out.distillery = values("distillery")[0];
+  out.msrp = toPrice(values("msrp")[0]) || priceFromTitle;
+  const codes = values("shortcodes").join(", ");
+  if (codes) out.shortcodes = codes;
+  out.url = out.url || values("url")[0] || "";
+  out.image = values("image")[0] || "";
+
+  // Notes: tasting notes first (what people actually want), then leftover prose
+  // and spec lines so nothing — mashbill, proof, age, barrel — is lost.
+  const tasting = values("notes");
+  const extraPlain = plain.filter((l) => l !== titleLine && !isUrlLine(l));
+  const leftoverSpecs = specs
+    .filter((s) => s.field === null || s.field === "mashbill" || s.field === "distillery")
+    .map((s) => `${s.key}: ${s.value}`);
+  out.notes = [tasting.join("\n"), extraPlain.join("\n"), leftoverSpecs.join("\n")]
+    .filter(Boolean)
+    .join("\n")
+    .trim()
+    .slice(0, 3000);
   return out;
 }
 
@@ -187,36 +273,17 @@ const KEY_MAP: Record<string, keyof ParsedBottle> = {
   photo: "image",
 };
 
-// "Name: X / Brand: Y / Notes: …" style paste. Returns null (so the caller
-// falls back to free-text) unless it found recognized keys and a name.
-function parseKeyValue(lines: string[], knownBrands: string[]): ParsedBottle | null {
-  const out = emptyParsed();
-  out.source = "key-value";
-  const extra: string[] = [];
-  const noteParts: string[] = [];
-  let hit = false;
-
-  for (const line of lines) {
-    const m = line.match(/^([A-Za-z][A-Za-z ]{0,18}?)\s*:\s*(.+)$/);
-    const key = m ? KEY_MAP[m[1].trim().toLowerCase()] : undefined;
-    if (!m || !key) {
-      extra.push(line);
-      continue;
-    }
-    hit = true;
-    const value = m[2].trim();
-    if (key === "notes") noteParts.push(value);
-    else if (key === "msrp") out.msrp = toPrice(value);
-    else out[key] = value;
-  }
-
-  if (!hit) return null;
-  const notes = [...noteParts, ...extra].join("\n").trim();
-  out.notes = notes;
-  if (!out.name) return null; // not really structured — let free-text try
-  if (!out.brand) out.brand = detectBrand(out.name, knownBrands);
-  if (!out.category) out.category = guessCategory([out.name, notes].join(" "));
-  return out;
+// Map a "Key:" label to a ParsedBottle field (or the special "mashbill"), or
+// null when it's spec metadata that should just be preserved in notes.
+function classifyKey(rawKey: string): string | null {
+  const k = rawKey.trim().toLowerCase();
+  if (KEY_MAP[k]) return KEY_MAP[k];
+  if (k.includes("tasting note") || k === "nose" || k === "palate" || k === "finish" || k === "taste")
+    return "notes";
+  if (k.includes("mashbill") || k.includes("mash bill")) return "mashbill";
+  if (k === "distillery" || k === "distiller" || k.includes("distilled") || k === "aged in" || k === "bottled in")
+    return "distillery";
+  return null;
 }
 
 function tryJson(raw: string): unknown {
@@ -334,10 +401,6 @@ export function parsePaste(raw: string, knownBrands: string[] = []): ParsedBottl
     const ld = fromJsonLd(json, knownBrands);
     if (ld) return ld;
   }
-
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const kv = parseKeyValue(lines, knownBrands);
-  if (kv) return kv;
 
   return parseFreeText(text, knownBrands);
 }
