@@ -13,6 +13,9 @@ Next.js 16 (App Router) + Prisma 6 + Postgres. Deployed on Railway.
 - Server actions in `lib/actions/`; route handlers in `app/api/`; all DB-touching
   routes/pages use `force-dynamic` (no DB at build time).
 - Writes from apps go only through POST `/api/pending` (Bearer `CELLAR_API_TOKEN`).
+- The operator "Quick add" page (`/add`, fed by the bookmarklet) creates catalog bottles
+  directly via a server action, like `/bottles/new`. It can be gated by `CELLAR_ADD_SECRET`
+  (unlock cookie, enforced server-side in `quickAddBottle`); the gate is a no-op when unset.
 - `/api/pending` answers CORS preflight (`OPTIONS`) and sends CORS headers so browser
   clients (e.g. the Beacon dashboard's "→ cellar" push) can call it cross-origin.
   Restrict origins with `CELLAR_CORS_ORIGIN` (comma-separated allowlist; the matching

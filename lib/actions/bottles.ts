@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeCode, parseDateValue } from "@/lib/serialize";
 import { brandKey, applyBrandRule } from "@/lib/brand-rules";
+import { isAddUnlocked } from "@/lib/gate";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -92,6 +93,10 @@ export async function quickAddBottle(
   form: FormData
 ): Promise<QuickAddState> {
   try {
+    // Enforced server-side so it can't be bypassed by posting the action.
+    if (!(await isAddUnlocked())) {
+      return { error: "Adding is locked — enter the shared secret to unlock." };
+    }
     const data = bottleData(form);
     const source = clean(form.get("sourceUrl"));
     if (source) data.notes = [data.notes, `Source: ${source}`].filter(Boolean).join("\n");

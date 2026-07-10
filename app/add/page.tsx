@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { brandKey } from "@/lib/brand-rules";
+import { addGateEnabled, isAddUnlocked } from "@/lib/gate";
 import { QuickAddForm } from "@/components/quick-add-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function AddPage() {
-  const [rules, bottleRows] = await Promise.all([
+  const [rules, bottleRows, unlocked] = await Promise.all([
     prisma.brandRule.findMany({
       select: { brand: true, brandKey: true, distillery: true, category: true, ndp: true },
     }),
@@ -14,7 +15,9 @@ export default async function AddPage() {
       orderBy: [{ brand: "asc" }, { name: "asc" }],
       select: { id: true, name: true, brand: true },
     }),
+    isAddUnlocked(),
   ]);
+  const gated = addGateEnabled();
 
   // Brand suggestions for the datalist + the parser's leading-brand detection:
   // every brand already in the catalog, plus any brand-rule brand, deduped by
@@ -34,7 +37,13 @@ export default async function AddPage() {
         here. Tier, VA ABC, and release details can be filled in afterward on the bottle&apos;s
         edit page.
       </p>
-      <QuickAddForm brands={brands} rules={rules} bottles={bottleRows} />
+      <QuickAddForm
+        brands={brands}
+        rules={rules}
+        bottles={bottleRows}
+        gated={gated}
+        unlocked={unlocked}
+      />
     </>
   );
 }

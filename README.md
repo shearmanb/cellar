@@ -57,6 +57,9 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   the bookmarklet) and Cellar parses it into name/brand/category/price/notes, flags likely
   existing matches, and creates the catalog bottle (same brand-rule + shortcode-collision rules
   as `/bottles/new`). Tier, VA ABC, and releases are filled in afterward on the edit page.
+  Set `CELLAR_ADD_SECRET` to gate adding behind a shared secret: the page still loads (so the
+  bookmarklet can prefill it), but creating a bottle requires unlocking once per browser, and
+  the check is enforced server-side. Leave the var unset to keep Quick add open.
 - `/bookmarklet` — installs a one-click browser bookmarklet that scrapes the page you're on
   (title, current text selection, Open Graph tags, JSON-LD product data) and opens `/add` with
   the fields prefilled. It only reads the page and passes data in the URL hash (no cross-origin
@@ -95,6 +98,7 @@ npm run dev
 2. On the app service set variables:
    - `DATABASE_URL` → reference the Postgres service's `DATABASE_URL`
    - `CELLAR_API_TOKEN` → `openssl rand -hex 24`
+   - `CELLAR_ADD_SECRET` (optional) → a shared secret that gates the `/add` Quick-Add write
 3. `railway.json` handles the rest (`prisma migrate deploy` runs pre-deploy).
 
 ## Migrating the consuming apps

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { quickAddBottle, type QuickAddState } from "@/lib/actions/bottles";
+import { unlockAdd, type UnlockState } from "@/lib/actions/gate";
 import {
   parsePaste,
   parseBookmarkletPayload,
@@ -35,10 +36,14 @@ export function QuickAddForm({
   brands,
   rules,
   bottles,
+  gated = false,
+  unlocked = true,
 }: {
   brands: string[];
   rules: BrandRuleHint[];
   bottles: BottleLite[];
+  gated?: boolean;
+  unlocked?: boolean;
 }) {
   const [f, setF] = useState<ParsedBottle>(emptyParsed());
   const [raw, setRaw] = useState("");
@@ -46,7 +51,18 @@ export function QuickAddForm({
     quickAddBottle,
     null
   );
+  const [unlockState, unlockAction, unlockPending] = useActionState<UnlockState, FormData>(
+    unlockAdd,
+    null
+  );
+  const [unlockedNow, setUnlockedNow] = useState(unlocked);
+  const canWrite = !gated || unlockedNow;
   const initialized = useRef(false);
+
+  // Flip to unlocked once the shared secret is accepted (cookie is now set).
+  useEffect(() => {
+    if (unlockState && "ok" in unlockState) setUnlockedNow(true);
+  }, [unlockState]);
 
   // Bookmarklet hand-off: the page was opened as /add#p=<payload>. Decode it,
   // prefill, then strip the hash so a reload doesn't re-add the same bottle.
@@ -95,6 +111,33 @@ export function QuickAddForm({
 
   return (
     <div>
+      {gated && !unlockedNow ? (
+        <form action={unlockAction} className="card" style={{ maxWidth: 720 }}>
+          <strong>🔒 Adding is locked</strong>
+          <p className="muted" style={{ margin: "0.35rem 0" }}>
+            Enter the shared secret to add bottles from this browser. You can still paste and
+            preview below.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              type="password"
+              name="secret"
+              placeholder="Shared secret"
+              autoComplete="current-password"
+              style={{ flex: 1 }}
+            />
+            <button type="submit" disabled={unlockPending}>
+              {unlockPending ? "Unlocking…" : "Unlock"}
+            </button>
+          </div>
+          {unlockState && "error" in unlockState ? (
+            <p className="error" style={{ margin: "0.5rem 0 0" }}>
+              {unlockState.error}
+            </p>
+          ) : null}
+        </form>
+      ) : null}
+
       <div className="field full" style={{ maxWidth: 720, marginBottom: "1rem" }}>
         <label htmlFor="paste">Paste a product title, listing, notes, or JSON</label>
         <textarea
@@ -272,8 +315,11 @@ export function QuickAddForm({
         ) : null}
 
         <div className="actions full">
-          <button type="submit" disabled={isPending || !f.name.trim() || !f.brand.trim()}>
-            {isPending ? "Adding…" : "Add to Cellar"}
+          <button
+            type="submit"
+            disabled={isPending || !canWrite || !f.name.trim() || !f.brand.trim()}
+          >
+            {isPending ? "Adding…" : canWrite ? "Add to Cellar" : "🔒 Unlock to add"}
           </button>
           <button
             type="button"
