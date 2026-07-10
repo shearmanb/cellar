@@ -22,6 +22,7 @@ export default function RootLayout({
           <nav>
             <Link href="/bottles">Bottles</Link>
             <Link href="/bottles/all">All fields</Link>
+            <Link href="/add">Add</Link>
             <Link href="/pending">Pending</Link>
             <Link href="/dupes">Dupes</Link>
             <Link href="/import">Import</Link>

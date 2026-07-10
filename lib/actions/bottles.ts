@@ -80,6 +80,36 @@ export async function createBottle(_prev: FormState, form: FormData): Promise<Fo
   redirect("/bottles");
 }
 
+export type QuickAddState = { ok: true; id: number; name: string } | { error: string } | null;
+
+// Quick-Add path (the /add paste page + bookmarklet). Same catalog write as
+// createBottle — brand-rule fill-the-blanks and shortcode collision checks —
+// but it returns a success state instead of redirecting, so the operator can
+// keep pasting bottles one after another. A source URL (Bottle has no url
+// column) is preserved by appending it to notes.
+export async function quickAddBottle(
+  _prev: QuickAddState,
+  form: FormData
+): Promise<QuickAddState> {
+  try {
+    const data = bottleData(form);
+    const source = clean(form.get("sourceUrl"));
+    if (source) data.notes = [data.notes, `Source: ${source}`].filter(Boolean).join("\n");
+    const codes = parseShortcodes(clean(form.get("shortcodes")));
+    await assertCodesAvailable(codes);
+    const rule =
+      (await prisma.brandRule.findUnique({ where: { brandKey: brandKey(data.brand) } })) ?? undefined;
+    applyBrandRule(data, rule, true);
+    const bottle = await prisma.bottle.create({
+      data: { ...data, aliases: { create: codes.map((code) => ({ code })) } },
+    });
+    revalidatePath("/bottles");
+    return { ok: true, id: bottle.id, name: bottle.name };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function updateBottle(
   id: number,
   _prev: FormState,

@@ -53,6 +53,15 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   **brand rules** (brand → default distillery/category/NDP), applied as fill-the-blanks
   on import + new-bottle entry, with a button to backfill existing bottles
 - `/bottles/new`, `/bottles/[id]/edit` — entry forms (main editing flow), releases, archive
+- `/add` — **Quick add**: paste a store title, listing, tasting notes, or JSON (or arrive from
+  the bookmarklet) and Cellar parses it into name/brand/category/price/notes, flags likely
+  existing matches, and creates the catalog bottle (same brand-rule + shortcode-collision rules
+  as `/bottles/new`). Tier, VA ABC, and releases are filled in afterward on the edit page.
+- `/bookmarklet` — installs a one-click browser bookmarklet that scrapes the page you're on
+  (title, current text selection, Open Graph tags, JSON-LD product data) and opens `/add` with
+  the fields prefilled. It only reads the page and passes data in the URL hash (no cross-origin
+  fetch), so it works on most sites; the `/add` paste box is the fallback when a site's CSP
+  blocks bookmarklets.
 - `/pending` — review queue: match to existing bottle / create new / ignore. Includes a
   "Check stores now" button when `SYNC_STORES` is set (e.g.
   `SYNC_STORES=thereveries=https://store-url`) — Cellar polls each store's public
