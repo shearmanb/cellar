@@ -11,25 +11,25 @@ datasource db {
 // (e.g. "George T. Stagg"), not per vintage and not per physical bottle.
 // id is immutable forever — consuming apps store it as a foreign key.
 model Bottle {
-  id         Int      @id @default(autoincrement())
-  name       String
-  brand      String
-  distillery String?
-  category   String? // Bourbon, Rye, Scotch, ...
-  tier       String? // S / A / B / C
-  myTier     String? // personal tier override
-  vabcCode        String?   // VA ABC product code
+  id              Int       @id @default(autoincrement())
+  name            String
+  brand           String
+  distillery      String?
+  category        String? // Bourbon, Rye, Scotch, ...
+  tier            String? // S / A / B / C
+  myTier          String? // personal tier override
+  vabcCode        String? // VA ABC product code
   ndp             Boolean   @default(false) // non-distiller producer (sourced, not self-distilled)
   vabcAllocated   Boolean   @default(false) // VA ABC allocated / lottery product
   addedToVabcAt   DateTime? @db.Date // date the bottle was added to the VA ABC website
   firstAppearance DateTime? @db.Date // date the bottle was first seen / first appeared
-  msrp       Decimal? @db.Decimal(10, 2)
-  warn       String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
-  notes      String?
-  displayValue String? // Drop Tracker label + inclusion switch — a bottle appears in Drop Tracker only when this is set
-  isArchived Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  msrp            Decimal?  @db.Decimal(10, 2)
+  warn            String? // collision/ambiguity guidance, e.g. "OFitz1924 vs OFo1924"
+  notes           String?
+  displayValue    String? // Drop Tracker label + inclusion switch — a bottle appears in Drop Tracker only when this is set
+  isArchived      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   aliases  Alias[]
   releases Release[]
@@ -86,6 +86,7 @@ enum PendingStatus {
   PENDING
   MATCHED
   IGNORED
+  MAYBE // triaged "decide later" from the mobile queue
 }
 
 // Inbound queue: the only write path consuming apps have. Beacon posts
@@ -95,10 +96,15 @@ model PendingBottle {
   store            String
   handle           String
   title            String
-  vendor           String?
+  vendor           String? // producer / brand (Shopify's vendor; brand for quick-add)
   url              String?
   image            String?
   price            Decimal?      @db.Decimal(10, 2)
+  // Parsed catalog fields carried from the /add Quick-Add flow so accepting a
+  // queued item can mint a fully-populated bottle. Null for plain Beacon rows.
+  category         String?
+  notes            String?
+  shortcodes       String? // comma-separated, split into aliases on accept
   status           PendingStatus @default(PENDING)
   resolvedBottleId Int?
   resolvedBottle   Bottle?       @relation(fields: [resolvedBottleId], references: [id])

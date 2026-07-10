@@ -31,11 +31,11 @@ export default async function AddPage() {
     <>
       <h1>Quick add</h1>
       <p className="muted" style={{ maxWidth: 720 }}>
-        Paste a store title, listing, tasting notes, or JSON and Cellar parses it into a new
-        catalog bottle. Review the fields, then add. Use the{" "}
+        Paste a store title, listing, tasting notes, or JSON and Cellar parses it into a bottle.
+        Review the fields, then send it to the review <a href="/queue">queue</a> — you approve or
+        discard queued bottles (yes / no / maybe) from your phone. Use the{" "}
         <a href="/bookmarklet">bookmarklet</a> to send whatever page you&apos;re browsing straight
-        here. Tier, VA ABC, and release details can be filled in afterward on the bottle&apos;s
-        edit page.
+        here.
       </p>
       <QuickAddForm
         brands={brands}

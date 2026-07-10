@@ -7,8 +7,8 @@ export default function BookmarkletPage() {
     <>
       <h1>Cellar bookmarklet</h1>
       <p className="muted" style={{ maxWidth: 720 }}>
-        A one-click way to grab whatever bottle, product, or notes you&apos;re looking at and add
-        it to the catalog. Install it once, then click it on any page.
+        A one-click way to grab whatever bottle, product, or notes you&apos;re looking at and drop
+        it into your review queue. Install it once, then click it on any page.
       </p>
 
       <BookmarkletLink />
@@ -26,7 +26,8 @@ export default function BookmarkletPage() {
         <li>
           It opens Cellar&apos;s <a href="/add">Quick add</a> page with the name, brand, price,
           and image already filled in from the page&apos;s title, Open Graph tags, and structured
-          product data. Review and hit <strong>Add to Cellar</strong>.
+          product data. Review and hit <strong>Add to queue</strong>, then approve it later from
+          the <a href="/queue">Queue</a> on your phone.
         </li>
       </ol>
 

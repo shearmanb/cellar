@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useMemo, useRef, useState } from "react";
-import { quickAddBottle, type QuickAddState } from "@/lib/actions/bottles";
+import { enqueuePendingBottle, type EnqueueState } from "@/lib/actions/pending";
 import { unlockAdd, type UnlockState } from "@/lib/actions/gate";
 import {
   parsePaste,
@@ -47,8 +47,8 @@ export function QuickAddForm({
 }) {
   const [f, setF] = useState<ParsedBottle>(emptyParsed());
   const [raw, setRaw] = useState("");
-  const [state, formAction, isPending] = useActionState<QuickAddState, FormData>(
-    quickAddBottle,
+  const [state, formAction, isPending] = useActionState<EnqueueState, FormData>(
+    enqueuePendingBottle,
     null
   );
   const [unlockState, unlockAction, unlockPending] = useActionState<UnlockState, FormData>(
@@ -172,8 +172,8 @@ export function QuickAddForm({
       {state && "error" in state ? <p className="error">{state.error}</p> : null}
       {state && "ok" in state ? (
         <p className="success">
-          Added <a href={`/bottles/${state.id}/edit`}>#{state.id} {state.name}</a> ✓ — paste
-          the next one, or open it to add tier / codes / more.
+          Added to the queue ✓ — paste the next one, then triage everything on your phone in
+          the <a href="/queue">Queue</a>.
         </p>
       ) : null}
 
@@ -294,8 +294,9 @@ export function QuickAddForm({
           />
         </div>
 
-        {/* Provenance — folded into notes on save (Bottle has no url column). */}
+        {/* Provenance carried into the queued row. */}
         <input type="hidden" name="sourceUrl" value={f.url} />
+        <input type="hidden" name="image" value={f.image} />
 
         {f.url || f.image ? (
           <div className="field full">
@@ -319,7 +320,7 @@ export function QuickAddForm({
             type="submit"
             disabled={isPending || !canWrite || !f.name.trim() || !f.brand.trim()}
           >
-            {isPending ? "Adding…" : canWrite ? "Add to Cellar" : "🔒 Unlock to add"}
+            {isPending ? "Adding…" : canWrite ? "Add to queue" : "🔒 Unlock to add"}
           </button>
           <button
             type="button"

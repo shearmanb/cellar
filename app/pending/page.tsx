@@ -33,6 +33,8 @@ export default async function PendingPage({
       <p className="muted">
         Listings submitted by consuming apps (e.g. Beacon) that aren&apos;t mapped to a
         canonical bottle yet. Match them to an existing bottle, mint a new one, or ignore.
+        Bookmarklet / paste captures are quicker to clear from the <a href="/queue">📱 mobile
+        queue</a> (yes / no / maybe).
       </p>
 
       {configuredStores().length > 0 ? (
