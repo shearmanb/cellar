@@ -20,6 +20,10 @@ Next.js 16 (App Router) + Prisma 6 + Postgres. Deployed on Railway.
   Quick-add rows never create a `StoreListing` (that's Beacon's dedupe layer). `CELLAR_ADD_SECRET`
   gates the quick-add writes (enqueue + accept/match) via an unlock cookie enforced server-side;
   no-op when unset.
+- Parser regression suite: `npm test` runs `tests/parse.test.ts` against `lib/parse.ts`.
+  Whenever a real paste parses badly, add the verbatim paste as a test case with the expected
+  fields FIRST, then fix the parser until green. Never weaken an existing case to make a new
+  one pass.
 - `/api/pending` answers CORS preflight (`OPTIONS`) and sends CORS headers so browser
   clients (e.g. the Beacon dashboard's "→ cellar" push) can call it cross-origin.
   Restrict origins with `CELLAR_CORS_ORIGIN` (comma-separated allowlist; the matching
