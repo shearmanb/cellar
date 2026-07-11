@@ -227,7 +227,13 @@ export function parseFreeText(raw: string, knownBrands: string[] = []): ParsedBo
 
   // Notes: tasting notes first (what people actually want), then leftover prose
   // and spec lines so nothing — mashbill, proof, age, barrel — is lost.
-  const tasting = values("notes");
+  // Nose/Palate/Finish keep their labels; a generic "Tasting Notes:" label is
+  // dropped since the content speaks for itself.
+  const tasting = specs
+    .filter((s) => s.field === "notes")
+    .map((s) =>
+      /^(nose|palate|finish|taste)$/i.test(s.key) ? `${s.key}: ${s.value}` : s.value
+    );
   const extraPlain = plain.filter((l) => l !== titleLine && !isUrlLine(l));
   const leftoverSpecs = specs
     .filter((s) => s.field === null || s.field === "mashbill" || s.field === "distillery")

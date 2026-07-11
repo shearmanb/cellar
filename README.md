@@ -95,7 +95,12 @@ cp .env.example .env        # set DATABASE_URL + CELLAR_API_TOKEN
 npx prisma migrate deploy   # create tables
 npm run db:seed             # optional starter bottles (skips if table non-empty)
 npm run dev
+npm test                    # parser regression suite (tests/parse.test.ts)
 ```
+
+When a Quick-Add paste parses badly, add the exact paste to `tests/parse.test.ts` with the
+fields it should produce, then fix `lib/parse.ts` until the suite is green — that's how the
+parser improves without regressing.
 
 ## Deploying to Railway
 
