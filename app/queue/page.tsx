@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { brandKey } from "@/lib/brand-rules";
 import { nameSimilarity } from "@/lib/dupes";
 import { addGateEnabled, isAddUnlocked } from "@/lib/gate";
-import { QUICKADD_STORE } from "@/lib/queue";
+import { TRIAGE_STORES } from "@/lib/queue";
 import { QueueTriage, type QueueItem } from "@/components/queue-triage";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export const metadata = { title: "Cellar — Queue" };
 export default async function QueuePage() {
   const [rows, bottles, unlocked] = await Promise.all([
     prisma.pendingBottle.findMany({
-      where: { store: QUICKADD_STORE, status: { in: ["PENDING", "MAYBE"] } },
+      where: { store: { in: [...TRIAGE_STORES] }, status: { in: ["PENDING", "MAYBE"] } },
       orderBy: { createdAt: "desc" },
     }),
     prisma.bottle.findMany({
@@ -44,6 +44,7 @@ export default async function QueuePage() {
   // price as a plain string.
   const toItem = (p: (typeof rows)[number]): QueueItem => ({
     id: p.id,
+    store: p.store,
     title: p.title,
     vendor: p.vendor,
     price: p.price === null ? null : String(p.price),
@@ -52,6 +53,7 @@ export default async function QueuePage() {
     category: p.category,
     notes: p.notes,
     shortcodes: p.shortcodes,
+    displayValue: p.displayValue,
     match: bestMatch(p.title, p.vendor),
   });
 

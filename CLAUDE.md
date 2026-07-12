@@ -15,11 +15,13 @@ Next.js 16 (App Router) + Prisma 6 + Postgres. Deployed on Railway.
 - Writes from apps go only through POST `/api/pending` (Bearer `CELLAR_API_TOKEN`).
 - The operator "Quick add" page (`/add`, fed by the bookmarklet) parses a paste into a bottle and
   **enqueues** it as a `PendingBottle` with `store = "quickadd"` (`lib/queue.ts`) rather than
-  writing the catalog directly. Triage is the mobile `/queue` (yes/no/maybe): accept mints the
-  bottle (brand rules + shortcode-collision checks), maybe → `PendingStatus.MAYBE`, no → ignore.
-  Quick-add rows never create a `StoreListing` (that's Beacon's dedupe layer). `CELLAR_ADD_SECRET`
-  gates the quick-add writes (enqueue + accept/match) via an unlock cookie enforced server-side;
-  no-op when unset.
+  writing the catalog directly. Triage is the mobile `/queue` (yes/no/maybe + edit + undo):
+  accept mints the bottle (brand rules + shortcode-collision checks, carrying
+  `PendingBottle.displayValue` → `Bottle.displayValue`), maybe → `PendingStatus.MAYBE`, no →
+  ignore. `/queue` covers `TRIAGE_STORES` (`quickadd`, `droptracker` — the id Drop Tracker uses
+  to POST parsed bottles to `/api/pending` for QC); triage-store rows never create a
+  `StoreListing` (that's Beacon's dedupe layer). `CELLAR_ADD_SECRET` gates the quick-add writes
+  (enqueue + edit + accept/match) via an unlock cookie enforced server-side; no-op when unset.
 - Parser regression suite: `npm test` runs `tests/parse.test.ts` against `lib/parse.ts`.
   Whenever a real paste parses badly, add the verbatim paste as a test case with the expected
   fields FIRST, then fix the parser until green. Never weaken an existing case to make a new

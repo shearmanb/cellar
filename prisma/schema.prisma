@@ -105,6 +105,7 @@ model PendingBottle {
   category         String?
   notes            String?
   shortcodes       String? // comma-separated, split into aliases on accept
+  displayValue     String? // optional Drop Tracker label; copied to the bottle on accept
   status           PendingStatus @default(PENDING)
   resolvedBottleId Int?
   resolvedBottle   Bottle?       @relation(fields: [resolvedBottleId], references: [id])

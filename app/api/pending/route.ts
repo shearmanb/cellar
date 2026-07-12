@@ -40,8 +40,11 @@ export async function GET(req: Request) {
 }
 
 // The single inbound write path for consuming apps. Beacon posts listings
-// it can't map to a bottleId. Requires Authorization: Bearer <token>.
-// Body: { store, handle, title, vendor?, url?, image?, price? }
+// it can't map to a bottleId; Drop Tracker posts parsed bottles for QC with
+// store = "droptracker" (those are triaged on the mobile /queue and never
+// create a StoreListing). Requires Authorization: Bearer <token>.
+// Body: { store, handle, title, vendor?, url?, image?, price?, displayValue? }
+// displayValue is the optional Drop Tracker label, copied to the bottle on accept.
 // Idempotent on (store, handle); re-posting an IGNORED/MATCHED item is a no-op.
 export async function POST(req: Request) {
   const cors = corsHeaders(req);
@@ -69,6 +72,7 @@ export async function POST(req: Request) {
     url: typeof body.url === "string" ? body.url : null,
     image: typeof body.image === "string" ? body.image : null,
     price,
+    displayValue: typeof body.displayValue === "string" ? body.displayValue : null,
   };
 
   // Already mapped? Tell the caller the bottleId instead of queueing.

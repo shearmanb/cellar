@@ -38,7 +38,7 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
 | `/api/listings` | GET | Beacon's map: `{store, handle, bottleId}` (`?store=` to filter) |
 | `/api/match?q=EHT,GTS` | GET | Normalization-as-a-service: freeform tokens → `{matched, unmatched}` (exact alias, then unique-prefix) |
 | `/api/pending` | GET | Current pending queue |
-| `/api/pending` | POST | Submit an unmapped listing: `{store, handle, title, vendor?, url?, image?, price?}`. Idempotent on `(store, handle)`; returns `{status: "already-mapped", bottleId}` if a mapping exists. **Auth required.** |
+| `/api/pending` | POST | Submit an unmapped listing: `{store, handle, title, vendor?, url?, image?, price?, displayValue?}` (`displayValue` = optional Drop Tracker label, copied to the bottle on accept). Idempotent on `(store, handle)`; returns `{status: "already-mapped", bottleId}` if a mapping exists. **Auth required.** |
 | `/api/export` | GET | CSV export (round-trippable with `/import`) |
 | `/api/sync` | POST | Pull all `SYNC_STORES` Shopify stores and queue unknown products as pending. **Auth required.** For external cron. |
 
@@ -59,12 +59,15 @@ Reads are open; the one write endpoint requires `Authorization: Bearer $CELLAR_A
   review **queue** (a `PendingBottle` with `store = quickadd`). Set `CELLAR_ADD_SECRET` to gate
   adding behind a shared secret — the page still loads (so the bookmarklet can prefill it), but
   the write is unlocked once per browser and enforced server-side; unset = open.
-- `/queue` — **mobile triage** of quick-add captures: one big card at a time with a fast
-  yes / no / maybe (✅ create the bottle · 🤔 decide later · ❌ discard), plus a "looks like #N"
-  shortcut to map an obvious duplicate onto an existing bottle instead of minting a new one.
-  Accepting applies the same brand-rule fill + shortcode-collision checks as `/bottles/new`; tier,
-  VA ABC, and releases are filled in afterward on the edit page. (Beacon's automated listings stay
-  on `/pending`.)
+- `/queue` — **mobile triage** of quick-add captures: one big card at a time — key specs (age,
+  mashbill, proof, barrel…) pulled out of the notes into a grid up top, tasting notes below —
+  with a fast yes / no / maybe (✅ create the bottle · 🤔 decide later · ❌ discard + Undo), an
+  ✏️ edit mode to fix any field (including the Drop Tracker display value) before accepting, and
+  a "looks like #N" shortcut to map an obvious duplicate onto an existing bottle instead of
+  minting a new one. Accepting applies the same brand-rule fill + shortcode-collision checks as
+  `/bottles/new`. The queue triages `store = quickadd` (bookmarklet/paste) and
+  `store = droptracker` (bottles posted by Drop Tracker for QC); Beacon's automated listings stay
+  on `/pending`, and triage-store rows never create a `StoreListing`.
 - `/bookmarklet` — installs a one-click browser bookmarklet that scrapes the page you're on
   (title, current text selection, Open Graph tags, JSON-LD product data) and opens `/add` with
   the fields prefilled. It only reads the page and passes data in the URL hash (no cross-origin
@@ -120,7 +123,10 @@ parser improves without regressing.
 2. **Drop Tracker** (small): point its bottle fetch at `GET /api/drop-tracker` instead
    of the Apps Script `?action=getBottles` URL. A bottle joins Drop Tracker's picker
    when you give it a `display_value` (the label the app shows); shortcodes are now
-   optional. The localStorage cache keeps working unchanged.
+   optional. The localStorage cache keeps working unchanged. For new bottles it parses,
+   POST them to `/api/pending` with `store: "droptracker"` (+ optional `displayValue`) —
+   they land in the mobile `/queue` for QC, and accepting mints the bottle with that
+   display value so it appears in the feed.
 3. **Beacon** (small–moderate): each loop, fetch `GET /api/listings?store=<site>` to tag
    known products with `bottleId`; POST products with no mapping to `/api/pending`
    (replaces the dead `pending_bottles.json` stub). Resolve the queue at `/pending`.
