@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { brandKey, applyBrandRule } from "@/lib/brand-rules";
 import { normalizeCode } from "@/lib/serialize";
 import { isAddUnlocked } from "@/lib/gate";
-import { QUICKADD_STORE } from "@/lib/queue";
+import { QUICKADD_STORE, TRIAGE_STORES } from "@/lib/queue";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import type { PendingBottle } from "@prisma/client";
@@ -104,6 +104,7 @@ async function mintBottleFromPending(
     category: p.category?.trim() || null,
     notes: p.notes?.trim() || null,
     msrp: p.price ?? null,
+    displayValue: p.displayValue?.trim() || null,
     ndp: false,
   };
   const rule =
@@ -131,7 +132,7 @@ async function mintBottleFromPending(
 async function linkPendingToBottle(pendingId: number, bottleId: number) {
   const p = await prisma.pendingBottle.findUniqueOrThrow({ where: { id: pendingId } });
   const ops = [];
-  if (p.store !== QUICKADD_STORE) {
+  if (!TRIAGE_STORES.includes(p.store)) {
     ops.push(
       prisma.storeListing.upsert({
         where: { store_handle: { store: p.store, handle: p.handle } },
@@ -195,6 +196,62 @@ export async function triageMatch(pendingId: number, bottleId: number): Promise<
     await linkPendingToBottle(pendingId, bottleId);
     revalidatePath("/pending");
     return { ok: true, bottleId };
+  } catch (e) {
+    return { error: msg(e) };
+  }
+}
+
+export type TriageEditResult =
+  | {
+      ok: true;
+      item: {
+        title: string;
+        vendor: string | null;
+        price: string | null;
+        category: string | null;
+        notes: string | null;
+        shortcodes: string | null;
+        displayValue: string | null;
+      };
+    }
+  | { error: string };
+
+// Edit a queued row in place (the /queue card's edit mode) so Yes mints the
+// corrected bottle. Gated like the other quick-add writes.
+export async function triageUpdate(pendingId: number, form: FormData): Promise<TriageEditResult> {
+  try {
+    if (!(await isAddUnlocked())) return { error: "Locked — unlock to edit." };
+    const title = field(form, "title");
+    if (!title) return { error: "Name is required." };
+    const priceRaw = field(form, "price");
+    if (priceRaw !== null && Number.isNaN(Number(priceRaw))) {
+      return { error: "Price must be a number." };
+    }
+    const p = await prisma.pendingBottle.update({
+      where: { id: pendingId },
+      data: {
+        title,
+        vendor: field(form, "vendor"),
+        price: priceRaw === null ? null : Number(priceRaw),
+        category: field(form, "category"),
+        notes: field(form, "notes"),
+        shortcodes: field(form, "shortcodes"),
+        displayValue: field(form, "displayValue"),
+      },
+    });
+    revalidatePath("/pending");
+    return {
+      ok: true,
+      item: {
+        title: p.title,
+        vendor: p.vendor,
+        price: p.price === null ? null : String(p.price),
+        category: p.category,
+        notes: p.notes,
+        shortcodes: p.shortcodes,
+        displayValue: p.displayValue,
+      },
+    };
   } catch (e) {
     return { error: msg(e) };
   }

@@ -392,19 +392,50 @@ tr.archived {
   padding: 1.1rem;
   margin: 1rem 0;
 }
-.triage-card img {
-  width: 100%;
-  max-height: 220px;
-  object-fit: contain;
+/* Key details first: small thumb beside the title instead of a hero image. */
+.triage-top {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.6rem;
+}
+.triage-thumb {
+  width: 72px;
+  height: 72px;
+  flex: none;
+  object-fit: cover;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.15);
-  margin-bottom: 0.9rem;
+  border: 1px solid var(--border);
 }
 .triage-title {
   font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.25;
-  margin: 0 0 0.6rem;
+  margin: 0;
+}
+/* Spec grid (Age / Mashbill / ABV / Barrel …) pulled out of the notes. */
+.triage-specs {
+  margin: 0 0 0.8rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.6rem;
+}
+.triage-spec {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr;
+  gap: 0 0.75rem;
+  padding: 0.12rem 0;
+  font-size: 0.92rem;
+}
+.triage-spec dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 0.2rem;
+}
+.triage-spec dd {
+  margin: 0;
 }
 .triage-chips {
   display: flex;
@@ -438,8 +469,16 @@ tr.archived {
   padding: 0.7rem 0 1rem;
   background: linear-gradient(to top, var(--bg) 72%, transparent);
 }
+.triage-toolrow {
+  display: flex;
+  gap: 0.6rem;
+  align-items: stretch;
+}
+.triage-toolrow > .secondary {
+  flex: none;
+}
 .triage-actions .match {
-  width: 100%;
+  flex: 1;
   background: var(--panel);
   color: var(--text);
   border: 1px solid var(--accent);
@@ -505,4 +544,28 @@ tr.archived {
 .triage-mini-actions button {
   font-size: 0.85rem;
   padding: 0.4rem 0.7rem;
+}
+.triage-undo {
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.6rem;
+}
+/* Inline edit mode for the current card. */
+.triage-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.triage-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+.triage-edit-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+.triage-edit-actions button {
+  min-height: 48px;
+  flex: 1;
 }
